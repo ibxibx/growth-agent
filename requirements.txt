@@ -1,0 +1,4 @@
+anthropic==0.112.0
+daytona==0.191.0
+mcp==1.28.0
+python-dotenv==1.2.2
