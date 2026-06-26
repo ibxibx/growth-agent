@@ -15,8 +15,15 @@ from mcp.client.streamable_http import streamablehttp_client
 
 
 def _endpoint() -> str:
+    # Allow an explicit full URL (e.g. https://kugiro.com/api/mcp/mcp) or a base
+    # URL we append the mcp-handler message path to. mcp-handler mounts the
+    # streamable-HTTP endpoint at <basePath>/mcp, and basePath is /api/mcp,
+    # so the full path is /api/mcp/mcp.
+    explicit = os.environ.get("KUGIRO_MCP_URL", "").strip()
+    if explicit:
+        return explicit
     base = os.environ.get("KUGIRO_BASE_URL", "http://localhost:3000").rstrip("/")
-    return f"{base}/api/mcp"
+    return f"{base}/api/mcp/mcp"
 
 
 def _auth_headers() -> dict:

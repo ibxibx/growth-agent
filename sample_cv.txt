@@ -1,0 +1,13 @@
+Ian Baumeister — Senior Full-Stack Engineer
+
+Berlin-based full-stack developer. Built production systems with Python and
+FastAPI on the backend, TypeScript and React on the frontend, backed by
+PostgreSQL. Integrated Claude API and LLM workflows throughout. Comfortable with
+REST API design and SQL. Currently exploring Docker for containerization.
+
+Experience:
+- Built WorkScanAI: Next.js + FastAPI automation scanner, Claude API integration.
+- Designed REST APIs and PostgreSQL schemas for B2B SaaS products.
+- Shipped LLM-powered features using the Anthropic API.
+
+Skills: Python, FastAPI, TypeScript, React, PostgreSQL, SQL, REST, Docker, LLM

@@ -19,6 +19,15 @@ load_dotenv()
 from agent.market import aggregate_market_demand, demand_by_role  # noqa: E402
 from agent.advisor import build_agent_list, aggregate  # noqa: E402
 from agent.swarm import run_swarm  # noqa: E402
+from agent.cv import skills_from_cv_text, read_cv_file, merge_skills  # noqa: E402
+
+
+def _cv_path_from_argv() -> str | None:
+    if "--cv" in sys.argv:
+        i = sys.argv.index("--cv")
+        if i + 1 < len(sys.argv):
+            return sys.argv[i + 1]
+    return None
 
 FIXTURE_PROFILE = {
     "target_roles": ["AI Product Manager", "Backend Engineer", "Platform Engineer"],
@@ -88,6 +97,18 @@ async def main() -> None:
         profile, jobs = FIXTURE_PROFILE, FIXTURE_JOBS
 
     candidate = candidate_from(profile)
+
+    # If a CV was provided, extract its skills and merge them into the profile.
+    cv_path = _cv_path_from_argv()
+    if cv_path:
+        cv_text = read_cv_file(cv_path)
+        if cv_text:
+            cv_skills = skills_from_cv_text(cv_text)
+            candidate["skills"] = merge_skills(candidate["skills"], cv_skills)
+            print(f"Merged {len(cv_skills)} skills from CV: {', '.join(cv_skills)}")
+        else:
+            print(f"(could not read CV at {cv_path}; continuing with profile only)")
+
     market = aggregate_market_demand(jobs, extra_skills=candidate["skills"])
     jobs_by_role = demand_by_role(jobs, candidate["target_roles"],
                                   extra_skills=candidate["skills"])
