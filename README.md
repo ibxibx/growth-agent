@@ -20,14 +20,58 @@ that ran and the numbers it produced.
 
 ## Architecture
 
+The agent is an **MCP client** of Kugiro. It pulls real data over MCP, then runs
+its analysis as generated code inside isolated Daytona sandboxes.
+
 ```
-Kugiro (Next.js + MCP server)  ──MCP──>  growth-agent (this repo)
-  get_search_profile  → candidate profile     1. read profile + real jobs
-  list_jobs / get_job → real scanned jobs      2. aggregate market demand
-                                               3. Claude GENERATES scoring code
-                                               4. run it in a Daytona sandbox
-                                               5. return ranked learning roadmap
+                  ┌──────────────────────────────┐
+                  │  Kugiro (Next.js + MCP server)│
+                  │  get_search_profile → profile │
+                  │  list_jobs / get_job → jobs    │
+                  └───────────────┬──────────────┘
+                                  │ MCP (Bearer kgr_…)
+                                  ▼
+                  ┌──────────────────────────────┐
+                  │        Orchestrator           │
+                  │  read profile + real jobs     │
+                  │  aggregate market demand      │
+                  └───────────────┬──────────────┘
+                                  │ fan out (parallel)
+        ┌────────────┬────────────┼────────────┬────────────┐
+        ▼            ▼            ▼            ▼            ▼
+   ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐
+   │per-role │ │per-role │ │ salary  │ │time-to- │ │ compete │
+   │  gap    │ │  gap    │ │ delta   │ │ ready   │ │  score  │
+   │(role A) │ │(role B) │ │         │ │         │ │         │
+   └────┬────┘ └────┬────┘ └────┬────┘ └────┬────┘ └────┬────┘
+        │           │           │           │           │
+   each agent: Claude GENERATES a program, run in its OWN
+   isolated Daytona sandbox. Independent → run in parallel.
+        │           │           │           │           │
+        └───────────┴───────────┼───────────┴───────────┘
+                                ▼
+                  ┌──────────────────────────────┐
+                  │         Aggregator            │
+                  │  merge all agent outputs      │
+                  └───────────────┬──────────────┘
+                                  ▼
+                  ┌──────────────────────────────┐
+                  │   Complete advisor report     │
+                  │  ranked roadmap + salary +    │
+                  │  timeline + competitiveness   │
+                  └──────────────────────────────┘
 ```
+
+**No scraping anywhere.** Market data comes from Kugiro's legal sources
+(LinkedIn guest API + Arbeitsagentur official API), read over MCP. The
+sandboxes execute *generated code*, never web requests against protected sites.
+
+Two entry points:
+
+- `run_agent.py` — single sandbox, one roadmap. Simple and bulletproof.
+- `run_swarm.py` — the parallel swarm above. N agents, N sandboxes, at once.
+  Wall-clock ≈ the slowest single agent, not the sum — that compression *is*
+  the Daytona showcase.
 
 ## Run it
 
@@ -42,10 +86,12 @@ python -m venv .venv
 copy .env.example .env   # then fill in real keys
 
 # 3a. OFFLINE demo — works anywhere, no Kugiro needed:
-.\.venv\Scripts\python.exe run_agent.py
+.\.venv\Scripts\python.exe run_agent.py          # single-agent roadmap
+.\.venv\Scripts\python.exe run_swarm.py          # parallel agent swarm
 
 # 3b. LIVE demo — pulls real data from a running Kugiro:
 .\.venv\Scripts\python.exe run_agent.py --kugiro
+.\.venv\Scripts\python.exe run_swarm.py --kugiro
 ```
 
 The offline demo is the **guaranteed** path: it exercises Claude code-gen + the
