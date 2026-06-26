@@ -51,6 +51,9 @@ copy .env.example .env   # then fill in real keys
 The offline demo is the **guaranteed** path: it exercises Claude code-gen + the
 Daytona sandbox end-to-end without depending on the dashboard being up.
 
+For the full run reference — every flag, output explained, troubleshooting —
+see **RUN.md**.
+
 ## What you get
 
 A ranked roadmap: for each missing in-demand skill — how much it lifts fit, what
