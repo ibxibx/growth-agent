@@ -50,3 +50,20 @@ def aggregate_market_demand(jobs: list[dict],
                 demand[skill] = demand.get(skill, 0) + 1
     # Drop zero-demand skills.
     return {k: v for k, v in demand.items() if v > 0}
+
+
+def demand_by_role(jobs: list[dict], target_roles: list[str],
+                   extra_skills: list[str] | None = None) -> dict:
+    """Return {role: {skill: count}} - market demand split per target role.
+
+    A job is attributed to a target role if the role name (lowercased) appears
+    in the job's role title. Jobs matching no target role are ignored here.
+    """
+    out: dict[str, list[dict]] = {r: [] for r in target_roles}
+    for job in jobs:
+        title = str(job.get("role", "")).lower()
+        for role in target_roles:
+            if role.lower() in title:
+                out[role].append(job)
+    return {role: aggregate_market_demand(js, extra_skills)
+            for role, js in out.items() if js}
